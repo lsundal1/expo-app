@@ -1,6 +1,7 @@
 import { Button, View, Image, StyleSheet, Platform } from 'react-native';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
@@ -27,28 +28,23 @@ export default function HomeScreen() {
     }
   };
 
-  const uploadImage = async (imageUri) => {
-    if (!imageUri) {
+  const uploadImage = async () => {
+    if (!image) {
       console.error("No image selected");
       return;
     }
   
     const apiKey = 'c78994b77edbc78647d0ed78958294b8';
-    const formData = new FormData();
-  
-    // Use 'fetch' to access the image file and convert it to the correct format
-    const fileUri = imageUri.startsWith('file://') ? imageUri : `file://${imageUri}`;
     
-    // You may also want to check the file extension, but we'll assume jpeg for now
-    const file = {
-      uri: fileUri,
-      type: 'image/jpeg',
-      name: 'photo.jpg',
-    };
-  
-    formData.append('image', file);
-  
     try {
+      // Convert the image to a base64 string
+      const base64Image = await FileSystem.readAsStringAsync(image, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+  
+      const formData = new FormData();
+      formData.append('image', base64Image);
+  
       const response = await axios.post(`https://api.imgbb.com/1/upload?key=${apiKey}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
