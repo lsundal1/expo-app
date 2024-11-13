@@ -5,13 +5,14 @@ import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import axios from 'axios'
+
 
 export default function HomeScreen() {
 
   const [image, setImage] = useState<string | null>(null);
 
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images', 'videos'],
       allowsEditing: true,
@@ -23,6 +24,40 @@ export default function HomeScreen() {
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
+    }
+  };
+
+  const uploadImage = async (imageUri) => {
+    if (!imageUri) {
+      console.error("No image selected");
+      return;
+    }
+  
+    const apiKey = 'c78994b77edbc78647d0ed78958294b8';
+    const formData = new FormData();
+  
+    // Use 'fetch' to access the image file and convert it to the correct format
+    const fileUri = imageUri.startsWith('file://') ? imageUri : `file://${imageUri}`;
+    
+    // You may also want to check the file extension, but we'll assume jpeg for now
+    const file = {
+      uri: fileUri,
+      type: 'image/jpeg',
+      name: 'photo.jpg',
+    };
+  
+    formData.append('image', file);
+  
+    try {
+      const response = await axios.post(`https://api.imgbb.com/1/upload?key=${apiKey}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+  
+      console.log('Image uploaded successfully:', response.data);
+    } catch (error) {
+      console.error('Image upload failed:', error.response ? error.response.data : error);
     }
   };
 
@@ -38,6 +73,9 @@ export default function HomeScreen() {
       <View style={styles.container}>
       <Button title="Pick an image from camera roll" onPress={pickImage} />
       {image && <Image source={{ uri: image }} style={styles.image} />}
+      </View>
+      <View>
+      {image && <Button title="Upload Image" onPress={() => uploadImage(image)} />}
       </View>
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Welcome!</ThemedText>
